@@ -2,7 +2,7 @@ from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User 
 from django.core.urlresolvers import reverse 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404 
 from django.shortcuts import render_to_response, get_object_or_404 
 from django.template import RequestContext 
 
@@ -29,16 +29,18 @@ def grid_detail(request, slug, template_name="grid/grid_detail.html"):
     # Get a list of all elements for this grid, and then package them into a
     # dictionary so we can easily lookup the element for every
     # feature/grid_package combination.
-    elements = {}
-    for e in Element.objects.all().filter(feature__in=features):
-        elements.setdefault(e.feature_id, {})[e.grid_package_id] = e
+    elements_mapping = {}
+    all_elements = Element.objects.all().filter(feature__in=features, grid_package__in=grid_packages)
+    for element in all_elements:
+        grid_mapping = elements_mapping.setdefault(element.feature_id, {})
+        grid_mapping[element.grid_package_id] = element
     
     return render_to_response(
         template_name, {
             'grid': grid,
             'features': features,
             'grid_packages': grid_packages,
-            'elements': elements,
+            'elements': elements_mapping,
         }, context_instance = RequestContext(request)
     )
         
@@ -135,10 +137,19 @@ def delete_grid_package(request, id, template_name="grid/edit_feature.html"):
 @login_required
 def edit_element(request, feature_id, package_id, template_name="grid/edit_element.html"):
     
-    feature = get_object_or_404(Feature, id=feature_id)
-    grid_package = get_object_or_404(GridPackage, id=package_id)    
-    element = get_object_or_404(Element, feature=feature, grid_package=grid_package)
+    feature = get_object_or_404(Feature, pk=feature_id)
+    grid_package = get_object_or_404(GridPackage, pk=package_id)    
     
+    # Sanity check to make sure both the feature and grid_package are related to
+    # the same grid!
+    if feature.grid_id != grid_package.grid_id:
+        raise Http404
+    
+    element, created = Element.objects.get_or_create(
+                                    grid_package=grid_package,
+                                    feature=feature
+                                    )    
+        
     form = ElementForm(request.POST or None, instance=element)
 
     if form.is_valid():
