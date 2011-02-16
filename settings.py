@@ -12,7 +12,10 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 # tells Pinax to use the default theme
 PINAX_THEME = "default"
 
-DEBUG = False
+try:
+    from local_settings import DEBUG
+except ImportError:
+    DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # tells Pinax to serve media through the staticfiles app.
