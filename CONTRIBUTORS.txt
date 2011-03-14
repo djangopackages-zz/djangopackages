@@ -8,3 +8,4 @@ Contributors
 James Punteney
 Jonas Obrist
 Taavi Taijala
+Nolan Bruabker - Relocated partial templates to 'includes' directories.
