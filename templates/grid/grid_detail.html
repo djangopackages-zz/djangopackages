@@ -120,6 +120,7 @@
                         </td>
                     {% endfor %}
                 </tr>
+
                 <tr class="odd">
                     <td>Version</td>
                     {% for grid_package in grid_packages %}
@@ -171,9 +172,17 @@
                         </td>
                     {% endfor %}
                 </tr>
+                <tr class="even">
+                    <td>Last updated</td>
+                    {% for grid_package in grid_packages %}
+                        <td>
+                           {{ grid_package.package.last_updated|date:"DATETIME_FORMAT" }}
+                        </td>
+                    {% endfor %}
+                </tr>
                 {% include "grid/snippets/grid_row_header.html" %}                
                 {% for feature in features %}
-                    <tr class="{% cycle 'even' 'odd' %}">
+                    <tr class="{% cycle 'odd' 'even' %}">
                         <td>{{ feature.title }}</td>
                         {% for grid_package in grid_packages %}
                             {% with elements|hash:feature.pk|hash:grid_package.pk as element %}
@@ -182,6 +191,7 @@
                         {% endfor %}
                     </tr>
                 {% endfor %}
+
                 {% if features %}
                     {% include "grid/snippets/grid_row_header.html" %}                
                 {% endif %}

@@ -121,7 +121,7 @@ class Package(BaseModel):
         except Version.DoesNotExist:
             return ''
                        
-    @property     
+    @property
     def pypi_name(self):
         """ return the pypi name of a package"""
         
@@ -132,6 +132,10 @@ class Package(BaseModel):
         if "/" in name:
             return name[:name.index("/")]
         return name
+
+    @property
+    def last_updated(self):
+        return self.commit_set.latest('commit_date').commit_date
 
     def active_examples(self):
         return self.packageexample_set.filter(active=True)
