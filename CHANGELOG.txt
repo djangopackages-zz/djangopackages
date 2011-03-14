@@ -5,6 +5,7 @@
 * Relocated partial templates to 'includes' directories.
 * Search box on every page
 * Sorting
+* jimallman - Improved comparison grid (toggles/degrades to simple table)
 
 2010, November 6
 ================

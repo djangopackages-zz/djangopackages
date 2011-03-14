@@ -12,3 +12,4 @@ Nolan Bruabker
 Preston Holmes
 Szilveszter Farkas
 Taavi Taijala
+Jim Allman <jim@ibang.com>
