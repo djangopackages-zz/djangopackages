@@ -258,6 +258,7 @@ TEST_RUNNER = 'testrunner.OurCoverageRunner'
 COVERAGE_MODULE_EXCLUDES = [
     'tests$', 'settings$', 'urls$', 'locale$', 'migrations', 'fixtures',
 ] + INSTALLED_APPS[:-len(PROJECT_APPS)]
+COVERAGE_REPORT_HTML_OUTPUT_DIR = "coverage"
 
 
 # local_settings.py can be used to override environment-specific settings
