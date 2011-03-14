@@ -117,7 +117,7 @@ class Package(BaseModel):
     @property
     def pypi_version(self):
         try:
-            return self.version_set.latest()
+            return self.version_set.latest('created')
         except Version.DoesNotExist:
             return ''
                        
