@@ -146,6 +146,16 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "homepage.context_processors.current_path",
 ]
 
+PROJECT_APPS = [
+    "about",
+    "grid",
+    "homepage",
+    "package",
+    "profiles",
+    "searchv1",
+    "apiv1",
+]
+
 INSTALLED_APPS = [
     # Django
     "django.contrib.admin",
@@ -181,16 +191,7 @@ INSTALLED_APPS = [
     "pinax.apps.account",
     "pinax.apps.signup_codes",
     "pinax.apps.analytics",
-    
-    # project
-    "about",
-    "grid",
-    "homepage",
-    "package",
-    "profiles",
-    "searchv1",
-    "apiv1",
-]
+] + PROJECT_APPS
 
 FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
@@ -250,6 +251,8 @@ if DEBUG:
             'django.template.loaders.filesystem.Loader',
             'django.template.loaders.app_directories.Loader',
     )
+
+TEST_RUNNER = 'testrunner.OurTestRunner'
     
 
 # local_settings.py can be used to override environment-specific settings
