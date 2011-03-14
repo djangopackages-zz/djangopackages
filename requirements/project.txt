@@ -12,3 +12,4 @@ mimeparse==0.1.2
 python-dateutil==1.5
 django-reversion==1.3.1
 django-sorting==0.1
+django-coverage==1.1.1

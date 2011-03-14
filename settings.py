@@ -252,8 +252,13 @@ if DEBUG:
             'django.template.loaders.app_directories.Loader',
     )
 
-TEST_RUNNER = 'testrunner.OurTestRunner'
-    
+#TEST_RUNNER = 'testrunner.OurTestRunner'
+TEST_RUNNER = 'testrunner.OurCoverageRunner'
+
+COVERAGE_MODULE_EXCLUDES = [
+    'tests$', 'settings$', 'urls$', 'locale$', 'migrations', 'fixtures',
+] + INSTALLED_APPS[:-len(PROJECT_APPS)]
+
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
