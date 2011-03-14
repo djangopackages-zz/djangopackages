@@ -112,6 +112,7 @@ MIDDLEWARE_CLASSES = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "pinax.apps.account.middleware.LocaleMiddleware",
     "pagination.middleware.PaginationMiddleware",
+    "django_sorting.middleware.SortingMiddleware",
     "pinax.middleware.security.HideSensistiveFieldsMiddleware",
     "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
 ]
@@ -145,6 +146,16 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "homepage.context_processors.current_path",
 ]
 
+PROJECT_APPS = [
+    "about",
+    "grid",
+    "homepage",
+    "package",
+    "profiles",
+    "searchv1",
+    "apiv1",
+]
+
 INSTALLED_APPS = [
     # Django
     "django.contrib.admin",
@@ -174,21 +185,13 @@ INSTALLED_APPS = [
 	"south",
 	"tastypie",
 	"reversion",
+    "django_sorting",
     
     # Pinax
     "pinax.apps.account",
     "pinax.apps.signup_codes",
     "pinax.apps.analytics",
-    
-    # project
-    "about",
-    "grid",
-    "homepage",
-    "package",
-    "profiles",
-    "searchv1",
-    "apiv1",
-]
+] + PROJECT_APPS
 
 FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
@@ -248,7 +251,15 @@ if DEBUG:
             'django.template.loaders.filesystem.Loader',
             'django.template.loaders.app_directories.Loader',
     )
-    
+
+#TEST_RUNNER = 'testrunner.OurTestRunner'
+TEST_RUNNER = 'testrunner.OurCoverageRunner'
+
+COVERAGE_MODULE_EXCLUDES = [
+    'tests$', 'settings$', 'urls$', 'locale$', 'migrations', 'fixtures',
+] + INSTALLED_APPS[:-len(PROJECT_APPS)]
+COVERAGE_REPORT_HTML_OUTPUT_DIR = "coverage"
+
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.

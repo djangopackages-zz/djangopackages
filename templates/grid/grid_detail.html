@@ -10,7 +10,13 @@
 {% load grid_tags %}
 {% load package_tags %}
 
-{% block head_title %}{{ object.title }}{% endblock %}
+{% block head_title %}{{ grid.title }}{% endblock %}
+
+{% block extra_head %}
+    {{ block.super }}
+    <meta name="description" content="{{ grid.description }}" />
+    <meta name="keywords" content="{{ grid.packages.all|join:',' }}" />
+{% endblock %}
 
 {% block body %}
 
@@ -134,7 +140,7 @@
                 <tr class="even">
                     <td>Commits</td>
                     {% for grid_package in grid_packages %}
-                        {% cache 86400 package.commitchart grid_package.package %}                
+                        {% cache 86400 package.commitchart grid_package.package %}
                             <td><img class="package-githubcommits" src="http://chart.apis.google.com/chart?cht=bvg&chs=105x20&chd=t:{{ grid_package.package|commits_over_52 }}&chco=666666&chbh=1,1,1&chds=0,20" /></td>
                         {% endcache %}
                     {% endfor %}
@@ -150,7 +156,7 @@
                     {% for grid_package in grid_packages %}
                         <td>{{ grid_package.package.repo_forks|default:"n/a" }}</td>
                     {% endfor %}
-                </tr>                  
+                </tr>
                 <tr class="odd">
                     <td>Participants</td>
                     {% for grid_package in grid_packages %}
@@ -166,6 +172,14 @@
                                     <a href="{% url package grid_package.package.slug %}">more...</a>
                                 {% endif %}
                             {% endfor %}                        
+                        </td>
+                    {% endfor %}
+                </tr>
+                <tr class="even">
+                    <td>Docs on RTD</td>
+                    {% for grid_package in grid_packages %}
+                        <td>
+                            <span class="rtd-status" rel="{{ grid_package.package.slug }}">Checking...</span>
                         </td>
                     {% endfor %}
                 </tr>
@@ -299,7 +313,34 @@
                     {% endif %}
                     
                  {% endif %}
-                 
+
+                 function handleRTD(elements) {
+                     if (!elements.length){
+                         return;
+                     }
+                     var ele = $(elements.shift());
+                     if (!ele){
+                         return;
+                     }
+                     var slug = ele.attr('rel');
+                     var url = "http://readthedocs.org/api/v1/build/"+ slug +"/?format=jsonp";
+                     $.ajax({
+                       url: url,
+                       dataType: 'jsonp',
+                       success:function(data){
+                           if (data.objects.length > 0){
+                               var href = "http://readthedocs.org/projects/" + slug;
+                               var a = "<a href='" + href + "'>Yes</a>";
+                               ele.html(a);
+                               handleRTD(elements);
+                           } else {
+                               ele.text("No");
+                               handleRTD(elements);
+                           }
+                       }
+                     });
+                 }
+                 handleRTD($.makeArray($('table#grid span.rtd-status')));
             });    
         </script>
 {% endblock %}

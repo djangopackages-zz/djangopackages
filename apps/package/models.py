@@ -12,6 +12,7 @@ from package.fields import CreationDateTimeField, ModificationDateTimeField
 from package.handlers import github
 from package.pypi import fetch_releases
 from package.utils import uniquer
+from distutils.version import LooseVersion as versioner
 from urllib import urlopen
 import logging
 import os
@@ -50,7 +51,8 @@ class Category(BaseModel):
 REPO_CHOICES = (
     ("package.handlers.unsupported", "Unsupported"),
     ("package.handlers.bitbucket", "Bitbucket"),
-    ("package.handlers.github", "Github")
+    ("package.handlers.github", "Github"),
+    ("package.handlers.launchpad", "Launchpad")
 )
 
 class Repo(BaseModel):
@@ -100,7 +102,7 @@ class Package(BaseModel):
     category        = models.ForeignKey(Category, verbose_name="Installation", help_text=category_help_text)
     repo            = models.ForeignKey(Repo, null=True)
     repo_description= models.TextField(_("Repo Description"), blank=True)
-    repo_url        = models.URLField(_("repo URL"), help_text=repo_url_help_text, blank=True)
+    repo_url        = models.URLField(_("repo URL"), help_text=repo_url_help_text, blank=True,unique=True)
     repo_watchers   = models.IntegerField(_("repo watchers"), default=0)
     repo_forks      = models.IntegerField(_("repo forks"), default=0)
     repo_commits    = models.IntegerField(_("repo commits"), default=0)
@@ -116,11 +118,13 @@ class Package(BaseModel):
     
     @property
     def pypi_version(self):
-        try:
-            return self.version_set.latest()
-        except Version.DoesNotExist:
-            return ''
-                       
+        string_ver_list = self.version_set.values_list('number', flat=True)
+        if string_ver_list:
+            vers_list = [versioner(v) for v in string_ver_list]
+            latest = sorted(vers_list)[-1]
+            return str(latest)
+        return ''
+
     @property     
     def pypi_name(self):
         """ return the pypi name of a package"""
