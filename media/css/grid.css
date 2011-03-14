@@ -1,3 +1,29 @@
 table#grid th { background: #75dfca;}
 
 .hidden {display:none;}
+
+div#body {
+    width: auto;
+    padding-right: 30px;
+}
+
+/* additional style to look good with dataTable plugin */
+.dataTables_wrapper table {
+    /* position: absolute; */
+}
+.dataTables_wrapper table {
+    margin-bottom: 0 !important;
+    /* table-layout: fixed; */
+}
+.dataTables_filter, 
+.dataTables_info {
+    margin: 8px 0;
+}
+#grid-toggle a {
+    background-color: #C0F1D1;
+    border: 1px solid #C1DAD7;
+    padding: 6px 25px;
+    display: inline-block;
+    text-align: center;
+    font-weight: bold;
+}
