@@ -190,6 +190,7 @@ INSTALLED_APPS = [
     "profiles",
     "searchv1",
     "apiv1",
+    "pypi",
 ]
 
 FIXTURE_DIRS = [

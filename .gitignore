@@ -1,4 +1,6 @@
 *.pyc
+*.DS_Store
+src/*
 dev.db*
 *.log
 local_settings.py
