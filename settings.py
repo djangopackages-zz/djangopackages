@@ -146,7 +146,18 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     "homepage.context_processors.current_path",
 ]
 
-INSTALLED_APPS = [
+PROJECT_APPS = [
+    "about",
+    "grid",
+    "homepage",
+    "package",
+    "profiles",
+    "searchv1",
+    "apiv1",
+    "pypi",
+]
+
+PREREQ_APPS = [
     # Django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -176,22 +187,15 @@ INSTALLED_APPS = [
 	"tastypie",
 	"reversion",
     "django_sorting",
+    "flatblocks",
     
     # Pinax
     "pinax.apps.account",
     "pinax.apps.signup_codes",
     "pinax.apps.analytics",
-    
-    # project
-    "about",
-    "grid",
-    "homepage",
-    "package",
-    "profiles",
-    "searchv1",
-    "apiv1",
-    "pypi",
 ]
+
+INSTALLED_APPS = PREREQ_APPS + PROJECT_APPS
 
 FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
@@ -251,7 +255,17 @@ if DEBUG:
             'django.template.loaders.filesystem.Loader',
             'django.template.loaders.app_directories.Loader',
     )
-    
+
+#TEST_RUNNER = 'testrunner.OurTestRunner'
+TEST_RUNNER = 'testrunner.OurCoverageRunner'
+
+COVERAGE_MODULE_EXCLUDES = [
+    'tests$', 'settings$', 'urls$', 'locale$',
+    'migrations', 'fixtures',
+]
+COVERAGE_MODULE_EXCLUDES += PREREQ_APPS
+COVERAGE_REPORT_HTML_OUTPUT_DIR = "coverage"
+
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.

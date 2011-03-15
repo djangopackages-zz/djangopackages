@@ -119,7 +119,7 @@ def update_or_create_package(package_name):
             'slug': slugify(package_data['latest'].get('name'))
         }
     )
-    package.pypi_homepage_url = package_data['latest'].get('home_page')
+    package.pypi_home_page = package_data['latest'].get('home_page')
     package.pypi_downloads = package_data['downloads']
     package.pypi_updated_ts = datetime.utcnow()
     package.save()

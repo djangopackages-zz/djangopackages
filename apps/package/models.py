@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 from github2.client import Github
 from package.fields import CreationDateTimeField, ModificationDateTimeField
@@ -50,7 +51,9 @@ class Category(BaseModel):
 REPO_CHOICES = (
     ("package.handlers.unsupported", "Unsupported"),
     ("package.handlers.bitbucket", "Bitbucket"),
-    ("package.handlers.github", "Github")
+    ("package.handlers.github", "Github"),
+    ("package.handlers.launchpad", "Launchpad"),
+    ("package.handlers.sourceforge", "Sourceforge")    
 )
 
 class Repo(BaseModel):
@@ -61,6 +64,7 @@ class Repo(BaseModel):
     url          = models.URLField(_("base URL of repo"))
     is_other     = models.BooleanField(_("Is Other?"), default=False, help_text="Only one can be set this way")
     user_regex   = models.CharField(_("User Regex"), help_text="Regex to calculate user's name or id",max_length="100", blank=True)
+    user_url     = models.CharField(_("User URL"), help_text="Use %s to mark the username", max_length="100", blank=True)
     repo_regex   = models.CharField(_("Repo Regex"), help_text="Regex to get repo's name", max_length="100", blank=True)
     slug_regex   = models.CharField(_("Slug Regex"), help_text="Regex to get repo's slug", max_length="100", blank=True)    
     handler      = models.CharField(_("Handler"), 
@@ -69,6 +73,16 @@ class Repo(BaseModel):
         max_length="200",
         default="package.handlers.unsupported")
     
+    def packages_for_profile(self, profile):
+        """Return a list of all packages contributed to by a profile."""
+        repo_url = profile.url_for_repo(self)
+        if repo_url:
+            regex = r'^{0},|,{0},|{0}$'.format(repo_url)
+            query = Q(participants__regex=regex) & Q(repo=self)
+            return list(Package.objects.filter(query))
+        else:
+            return []
+
     class Meta:
         ordering = ['-is_supported', 'title']
     
@@ -105,7 +119,7 @@ class Package(BaseModel):
     repo_forks      = models.IntegerField(_("repo forks"), default=0)
     repo_commits    = models.IntegerField(_("repo commits"), default=0)
     pypi_url        = models.URLField(_("PyPI slug"), help_text=pypi_url_help_text, blank=True, default='', unique=True)
-    pypi_homepage_url = models.URLField(_("PyPI package homepage"), blank=True, verify_exists=False)
+    pypi_home_page = models.URLField(_("PyPI package homepage"), max_length=200, null=True, blank=True)
     #pypi_version    = models.CharField(_("Current Pypi version"), max_length="20", blank=True)
     pypi_downloads  = models.IntegerField(_("Pypi downloads"), default=0)
     related_packages    = models.ManyToManyField("self", blank=True)
@@ -137,6 +151,13 @@ class Package(BaseModel):
             return name[:name.index("/")]
         return name
 
+    @property
+    def last_updated(self):
+        last_commit = self.commit_set.latest('commit_date')
+        if last_commit: 
+            return last_commit.commit_date
+        return None
+
     def active_examples(self):
         return self.packageexample_set.filter(active=True)
     
@@ -144,6 +165,7 @@ class Package(BaseModel):
         
         return (x.grid for x in self.gridpackage_set.all())
     
+    @property
     def repo_name(self):
         return self.repo_url.replace(self.repo.url + '/','')
     
