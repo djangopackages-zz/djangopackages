@@ -9,6 +9,8 @@ from datetime import datetime
 import itertools
 import xmlrpclib
 
+from django.template.defaultfilters import slugify
+
 from package.models import Package, Version
 from pypi.models import PyPIUpdateLog
 
@@ -46,10 +48,11 @@ def update_outdated_packages(allow_initial_full_download=False):
     """
     # Set the update log first, so if anything, we overlap rather than miss
     # out on any updates
+    updates_exist = PyPIUpdateLog.objects.exists()
     update_log = PyPIUpdateLog()
     update_log.save()
 
-    if not PyPIUpdateLog.objects.exists():
+    if not updates_exist:
         if allow_initial_full_download:
             names_to_update = PYPI.list_packages()
         else:
@@ -58,8 +61,8 @@ def update_outdated_packages(allow_initial_full_download=False):
                 'know what you\'re doing, please pass the appropriate flag.')
     else:
         last_update = PyPIUpdateLog.last_update_ts()
-        changelog = fetch_changelog(timestamp)
-        names_to_update = itertools.imap(lambda action: action[0], changelog)
+        changelog = fetch_changelog(last_update)
+        names_to_update = set(map(lambda action: action[0], changelog))
 
     # Grab the changelog and farm each update out
     for name in names_to_update:
@@ -85,7 +88,8 @@ def update_or_create_package(package_name):
                 if classifier.startswith('License'):
                     data['license'] = classifier.replace('License ::', '')
                     break
-        data['license'] = data['license'].replace('OSI Approved ::').strip()
+        data['license'] = data['license'].replace('OSI Approved ::', '')
+        data['license'] = data['license'].strip()
 
         version_data = {
             'order': i,
@@ -107,12 +111,14 @@ def update_or_create_package(package_name):
         package_data['latest'] = data
 
     # Update everything in the database
-    package, created = Package.objects.get_or_create(pypi_url=package_name)
-    if created:
-        package.pypi_url = package_name
-        package.title = package_data['latest'].get('name')
-        # package.slug (???)
-        # TODO: Automate category selection somehow?
+    package, created = Package.objects.get_or_create(
+        pypi_url=package_name,
+        defaults={
+            'pypi_url': package_name,
+            'title': package_data['latest'].get('name'),
+            'slug': slugify(package_data['latest'].get('name'))
+        }
+    )
     package.pypi_homepage_url = package_data['latest'].get('home_page')
     package.pypi_downloads = package_data['downloads']
     package.pypi_updated_ts = datetime.utcnow()
@@ -121,10 +127,12 @@ def update_or_create_package(package_name):
         version, created = Version.objects.get_or_create(
             package=package,
             number=version_data['number'],
+            defaults={
+                'package': package,
+                'number': version_data['number'],
+                'order': version_data['order'],
+            }
         )
-        if created:
-            version.package = package
-            version.number = version_data['number']
         version.order = version_data['order']
         version.downloads = version_data['downloads']
         version.license = version_data['license']
