@@ -11,7 +11,6 @@ from django.utils.translation import ugettext_lazy as _
 from github2.client import Github
 from package.fields import CreationDateTimeField, ModificationDateTimeField
 from package.handlers import github
-from package.pypi import fetch_releases
 from package.utils import uniquer
 from distutils.version import LooseVersion as versioner
 from urllib import urlopen
@@ -115,11 +114,13 @@ class Package(BaseModel):
     category        = models.ForeignKey(Category, verbose_name="Installation", help_text=category_help_text)
     repo            = models.ForeignKey(Repo, null=True)
     repo_description= models.TextField(_("Repo Description"), blank=True)
-    repo_url        = models.URLField(_("repo URL"), help_text=repo_url_help_text, blank=True,unique=True)
+    repo_url        = models.URLField(_("repo URL"), help_text=repo_url_help_text, blank=True, unique=True)
     repo_watchers   = models.IntegerField(_("repo watchers"), default=0)
     repo_forks      = models.IntegerField(_("repo forks"), default=0)
     repo_commits    = models.IntegerField(_("repo commits"), default=0)
-    pypi_url        = models.URLField(_("PyPI slug"), help_text=pypi_url_help_text, blank=True, default='')
+    pypi_url        = models.URLField(_("PyPI slug"), help_text=pypi_url_help_text, blank=True, default='', unique=True)
+    pypi_home_page = models.URLField(_("PyPI package homepage"), max_length=200, null=True, blank=True)
+    #pypi_version    = models.CharField(_("Current Pypi version"), max_length="20", blank=True)
     pypi_downloads  = models.IntegerField(_("Pypi downloads"), default=0)
     related_packages    = models.ManyToManyField("self", blank=True)
     participants    = models.TextField(_("Participants"),
@@ -127,7 +128,7 @@ class Package(BaseModel):
     usage           = models.ManyToManyField(User, blank=True)
     created_by = models.ForeignKey(User, blank=True, null=True, related_name="creator")    
     last_modified_by = models.ForeignKey(User, blank=True, null=True, related_name="modifier")
-    pypi_home_page  = models.URLField(_("homepage on PyPI for a project"), blank=True, null=True)
+    pypi_updated_ts = models.DateTimeField(null=True)
     
     @property
     def pypi_version(self):
@@ -175,37 +176,18 @@ class Package(BaseModel):
         from package.templatetags.package_tags import commits_over_52
         return commits_over_52(self)
     
-    def fetch_metadata(self, *args, **kwargs):
-        
-        # Get the downloads from pypi
-        if self.pypi_url.strip() and self.pypi_url != "http://pypi.python.org/pypi/":
-            
-            total_downloads = 0
-            
-            for release in fetch_releases(self.pypi_name):
-            
-                version, created = Version.objects.get_or_create(
-                    package = self,
-                    number = release.version
-                )
+    def fetch_all_updates(self):
+        """Fetches available updates from PyPI and the project repo."""
+        from pypi.handler import update_or_create_package
+        update_or_create_package(self.pypi_url)
+        self.fetch_repo_data()
+        self.save()
 
-                # add to total downloads
-                total_downloads += release.downloads
-
-                # add to versions
-                version.downloads = release.downloads
-                version.license = release.license
-                version.hidden = release._pypi_hidden                
-                version.save()
-            
-            self.pypi_downloads = total_downloads
-        
+    def fetch_repo_data(self):
         # Get the repo watchers number
         base_handler = __import__(self.repo.handler)
         handler = sys.modules[self.repo.handler]
-
         self = handler.pull(self)
-        self.save()        
 
     class Meta:
         ordering = ['title']
@@ -250,10 +232,15 @@ class Version(BaseModel):
     downloads = models.IntegerField(_("downloads"), default=0)
     license = models.CharField(_("license"), max_length="100")
     hidden = models.BooleanField(_("hidden"), default=False)    
+
+    # Since PyPI packages can have wacky version "numbers" like 1.1b2 or
+    # 2011-3 or really anything, we'll want to capture their official ordering
+    # with higher order numbers being more recent releases
+    order = models.IntegerField(_("Order"))
     
     class Meta:
-        get_latest_by = 'created'
-        ordering = ['-created']
+        get_latest_by = 'order'
+        ordering = ['-order']
     
     def __unicode__(self):
         return "%s: %s" % (self.package.title, self.number)

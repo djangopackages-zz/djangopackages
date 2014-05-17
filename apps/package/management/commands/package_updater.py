@@ -41,7 +41,7 @@ class Command(NoArgsCommand):
                 if package.repo == github_repo:
                     # Do github
                     try:
-                        package.fetch_metadata()
+                        package.fetch_all_updates()
                     except socket_error, e:
                         print >> stdout, "For '%s', threw a socket.error: %s" % (package.title, e)
                         continue
@@ -52,7 +52,7 @@ class Command(NoArgsCommand):
                     zzz = 1
                     # do bitbucket
                     try:
-                        package.fetch_metadata()
+                        package.fetch_all_updates()
                     except socket_error, e:
                         print >> stdout, "For '%s', threw a socket.error: %s" % (package.title, e)
                         continue                  
@@ -72,7 +72,7 @@ class Command(NoArgsCommand):
                 else:
                     # unsupported so we just get metadata and go on
                     try:
-                        package.fetch_metadata()
+                        package.fetch_all_updates()
                     except socket_error, e:
                         print >> stdout, "For '%s', threw a socket.error: %s" % (package.title, e)
                         continue               
